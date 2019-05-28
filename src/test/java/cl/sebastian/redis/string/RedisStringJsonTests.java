@@ -32,12 +32,15 @@ public class RedisStringJsonTests {
     cont.start();
   }
 
-  static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
-    public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
+  static class Initializer
+          implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+
+    @Override
+    public void initialize(ConfigurableApplicationContext ctx) {
       TestPropertyValues.of(
               "redis.puerto=" + cont.getFirstMappedPort(),
               "redis.host=" + cont.getContainerIpAddress()
-      ).applyTo(configurableApplicationContext.getEnvironment());
+      ).applyTo(ctx.getEnvironment());
     }
   }
 
@@ -58,5 +61,4 @@ public class RedisStringJsonTests {
     assertThat(x.getId()).isEqualTo(1);
     assertThat(x.getNombre()).isEqualTo("nombre");
   }
-
 }
