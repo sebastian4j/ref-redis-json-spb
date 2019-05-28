@@ -1,5 +1,7 @@
 package cl.sebastian.redis.string;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.Rule;
 import org.junit.jupiter.api.AfterAll;
@@ -13,11 +15,14 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ContextConfiguration;
 import org.testcontainers.containers.GenericContainer;
+import redis.clients.jedis.Jedis;
 
 @SpringBootTest
 @ContextConfiguration(initializers = {RedisStringJsonTests.Initializer.class})
 public class RedisStringJsonTests {
-
+  private static String redisHost;
+  private static int redisPuerto;
+  
   @Rule
   public static GenericContainer cont = new GenericContainer<>("redis:5.0.3-alpine")
           .withExposedPorts(6379);
@@ -37,9 +42,11 @@ public class RedisStringJsonTests {
 
     @Override
     public void initialize(ConfigurableApplicationContext ctx) {
+      redisHost = cont.getContainerIpAddress();
+      redisPuerto = cont.getFirstMappedPort();
       TestPropertyValues.of(
-              "redis.puerto=" + cont.getFirstMappedPort(),
-              "redis.host=" + cont.getContainerIpAddress()
+              "redis.puerto=" + redisPuerto,
+              "redis.host=" + redisHost
       ).applyTo(ctx.getEnvironment());
     }
   }
@@ -48,7 +55,7 @@ public class RedisStringJsonTests {
   private RedisTemplate<String, Object> redis;
 
   @Test
-  public void validarRegistroJson() {
+  public void validarRegistroJson() throws IOException {
     assertThat(redis).isNotNull();
     var hash = redis.opsForHash();
     final Persona p = new Persona();
@@ -60,5 +67,10 @@ public class RedisStringJsonTests {
     var x = (Persona) hash.get(claveRedis, claveRegistro);
     assertThat(x.getId()).isEqualTo(1);
     assertThat(x.getNombre()).isEqualTo("nombre");
+    
+    Jedis jedis = new Jedis(redisHost, redisPuerto);
+    final var recuperado = jedis.hget(claveRedis, claveRegistro);
+    var personaRecuperada = new ObjectMapper().readValue(recuperado, Persona.class);
+    assertThat(personaRecuperada).isEqualToComparingFieldByField(p);
   }
 }

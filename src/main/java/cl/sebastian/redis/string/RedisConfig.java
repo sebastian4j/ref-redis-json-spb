@@ -37,8 +37,6 @@ public class RedisConfig {
   @Bean
   public JedisConnectionFactory redisConnectionFactory(@Value("${redis.host}") String host,
           @Value("${redis.puerto}") int puerto) {
-    System.out.println("puerto: " + puerto);
-    System.out.println("host: " + host);
     RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, puerto);
     return new JedisConnectionFactory(config);
   }
